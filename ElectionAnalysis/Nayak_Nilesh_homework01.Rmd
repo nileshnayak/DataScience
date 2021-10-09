@@ -1,0 +1,272 @@
+---
+title: 'POL40950: Introduction to Statistics'
+author: "Nilesh Nayak"
+date: 'Deadline: 7 October 2021'
+output:
+  pdf_document: default
+  html_document: default
+subtitle: Homework 1
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Instructions
+
+- Rename this file to your LASTNAME_FIRSTNAME_homework01.Rmd and insert your name at the header of this script (see `INSERT YOUR NAME`).
+- If an answer to a question requires code, add the code in the code block below. For questions that need interpretations or explanations, write your answer in _italics_ (using `_` and `_` at the beginning and end of your answer) below the question.
+- **This script will only knit if `data_which_candidate.rds` and `dat_elections.csv` are stored in the same folder as this RMarkdown file! Both datasets are in the "Homeworks" folder on Brightspace.**
+- Please knit this file as an .html document and upload the .html document to the assignment folder on Brightspace.
+- If the code for one of the questions is not working, leave the code in the chunk, but change the beginning of the chunk to `{r,eval=FALSE}`. Only do this as a last resort, though.
+
+install.packages("dplyr")
+
+```{r, message=FALSE, warning=FALSE}
+# load required package
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+```
+
+## Working with and Wrangling Survey Data (100 points + 5 bonus points)
+
+In this homework, we work with responses to the Voting Advice Application "Which Candidate". You can see the raw data at: https://doi.org/10.7910/DVN/OEYRN7.
+
+We use a cleaned version of the original file. Let's load the file:
+
+```{r}
+# make sure to store the datsets in the same folder as this .Rmd file!
+dat_vaa <- readRDS("data_which_candidate.rds")
+```
+
+1. How many observations does the dataset consist of? What is the unit of analysis? And which variables are included in this dataset (check out `names()`)? [5 points]
+
+```{r}
+dim(dat_vaa)
+```
+_There are 141936 observations and 4 variables before removing missing values_
+
+```{r}
+head(dat_vaa,10)
+```
+```{r}
+summary(dat_vaa)
+```
+```{r}
+names(dat_vaa)
+```
+_There are 4 variables in the dataset : immig, partyvote, lr_selfplacement, age_
+
+```{r} 
+dat_vaa_filtered = dat_vaa %>% drop_na() 
+dim(dat_vaa_filtered)
+```
+_There are 45880 observations and 4 variables after removing missing values_
+
+```{r}
+summary(dat_vaa_filtered)
+```
+```{r}
+head(dat_vaa_filtered,10)
+```
+
+_Unit of analysis is -> Party vote share per age group at each country level which support more/less restrictive immigration policies_
+
+2. Group the data frame by `partyvote` (check `group_by()`) and get the absolute frequency (`count()`) of respondents per party. [5 points]
+
+```{r}
+
+dat_vaa_group_partyvote_count <- dat_vaa_filtered %>% group_by(partyvote) %>% count()
+names(dat_vaa_group_partyvote_count)[2] <- "count"
+dat_vaa_group_partyvote_count 
+
+```
+
+3. Calculate the relative frequencies of respondents (=proportions) in each `partyvote` group. Note: you will find suggestions on how to calculate proportions per group online at StackOverFlow. [10 points]
+
+```{r}
+dat_vaa_group_partyvote_freq = dat_vaa_filtered %>%  group_by(partyvote) %>% summarise(count = n()) %>%   mutate(relative_frequency = round(count / sum(count), 3)*100) %>% 
+  arrange(desc(relative_frequency))
+
+dat_vaa_group_partyvote_freq
+```
+
+4. Get the first-preference vote shares for Irish parties in 2020 from the ParlGov dataset (`dat_elections`). Are voters from certain parties over- or under-represented in the  Voting Advice Application data compared with the official election results? Is this dataset representative of Irish voters? [15 points]
+
+```{r}
+# load ParlGov election data 
+# removed fileEncoding = "UTF-8"
+#dat_elections <- read.csv("dat_elections.csv",fileEncoding = "UTF-8")
+
+dat_elections <- read.csv("https://parlgov.org/data/parlgov-development_csv-utf-8/view_election.csv")
+dim(dat_elections)
+dat_elections = dat_elections %>% drop_na() 
+dim(dat_elections)
+head(dat_elections)
+newdata <- subset(dat_elections, country_name=="Ireland" & substr(election_date,1,4)=="2020")
+dim(newdata)
+newdata
+newdata %>% select(party_name_english, vote_share)
+
+cbind(newdata %>% select(party_name_english, vote_share), partyvote = dat_vaa_group_partyvote_freq$partyvote, relative_frequency = dat_vaa_group_partyvote_freq$relative_frequency)
+```
+_Green Party and Social Democrats are over represented as survey respondents are very high, but vote share received is lesser._
+
+_Fianna Fail , Fine Gael, Sinn Fein are under represented as survey respondents are lower, but vote share received is higher._
+
+5. The variable `immig` takes the value 1 if a respondent expressed that immigration "should be more restrictive". (The original question is: "Should immigration into Ireland be made more restrictive or less restrictive?"). What proportion of _all_ participants agrees that immigration should be more restrictive? [5 points]
+
+```{r}
+dat_vaa %>%  group_by(immig) %>% summarise(cnt = n()) %>% mutate(freq = round(cnt / sum(cnt)*100, 3)) %>%  arrange(desc(freq))
+```
+_21.69% agree that immigration should be more restrictive_
+
+_I have considered the "dat_vaa" dataframe which has NA's. I think the NA's add the impact in the "all participants list" since these respondents could voluntarily chose to not provide an input in the survey_
+
+6. Calculate these proportions separately for supporters from each party (using `partyvote` as the grouping variable). [5 points]
+
+```{r}
+dat_vaa_filtered %>%  group_by(partyvote, immig) %>%  summarise(cnt = n()) %>% mutate(freq = round(cnt / sum(cnt)*100, 3)) %>%  arrange(partyvote, immig)
+```
+
+_I have considered the "dat_vaa_filtered" dataframe initially since each party would specifically want to understand immig = 1 versus immig = 0 excluding the NA's to make a decision_
+
+7. Create a barplot with the `partyvote` on the x-axis and the proportion of respondents who favour more  restrictive immigration policies on the y-axis. [5 points]
+
+```{r}
+data_immig = dat_vaa_filtered %>%  group_by(partyvote, immig) %>%  summarise(cnt = n()) %>% mutate(freq = round(cnt / sum(cnt)*100, 3))
+data_immig
+data_immig1 = subset(data_immig, data_immig$immig == '1')
+data_immig1
+data_immig1 %>% ggplot(aes(x = partyvote, y = freq)) + geom_col()+
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + labs(x = "Party vote", y = "% Respondents", title = "% Respondents who favour more restrictive immigration policies")
+```
+8. Reorder the parties on the x-axis in descending order (the party with the highest proportions should be the first party in the graph). [5 points]
+
+```{r}
+data_immig1$partyvote = factor(data_immig1$partyvote, levels = data_immig1$partyvote[order(data_immig1$freq, decreasing = TRUE)])
+
+data_immig1 %>% ggplot(aes(x = partyvote, y = freq)) + geom_col(fill="steelblue", width=0.5)+
+  theme(axis.text.x = element_text(angle = 45, hjust=1)) + labs(title="% Respondents who favour more restrictive immigration policies")
+```
+_Aontú has highest respondents who favour more restrictions_
+
+9. Use `coord_flip()` to flip the x- and y-axes. Create nicer axis labels and use `theme_bw()` to change the theme to a black-and-white theme. [5 points]
+
+```{r}
+
+#how to use x label and y label and give it colours
+data_immig1 %>% ggplot(aes(x = partyvote, y = freq)) + geom_col(width=0.5)+ coord_flip() + theme_bw() + labs(x = "Party vote", y = "% Respondents", title = "Respondents % who favour more restrictive immigration policies")
+```
+
+10. Now we turn to left-right positions. The variable `lr_selfplacement` measures the left-right position of a respondent. How many respondents did _not_ specify their left-right self-placement? [5 points]
+
+```{r}
+sum(is.na(dat_vaa$lr_selfplacement))
+```
+_61591 respondents did not specify their left-right self-placement_
+_I have considered the original dataframe "dat_vaa" containing all NA values_
+
+
+11. Create a histogram of left-right positions with "small multiples" for each group of party supporters (check out `facet_wrap()`)? [5 points]
+
+```{r}
+#Need to do facetwrap
+ggplot(dat_vaa_filtered, aes(x=lr_selfplacement), main="Histogram for left-right positions", xlab="LR positions", ylab='count')+ geom_histogram(color="black", fill="yellow")+ facet_wrap(partyvote ~ .)
+```
+
+12. Use `summarise()` to calculate the 
+
+- average left-right position
+- median left-right position
+- standard deviation of the left-right position
+
+and store this data frame as a new object (always exclude missing responses). [5 points]
+
+```{r}
+summarised_object = dat_vaa %>% summarise(mean = mean(lr_selfplacement, na.rm = TRUE), median = median(lr_selfplacement, na.rm = TRUE), std_dev = sd(lr_selfplacement, na.rm = TRUE))
+summarised_object 
+
+```
+_I have considered the dataframe with NA initially and removed the NA's at column level for the calculation purpose_
+
+13. Repeat the step above, but first group the data frame by `partyvote` and then get the average, median, and standard deviation separately for supporters from each party. [5 points]
+
+```{r}
+mean = dat_vaa %>%  group_by(partyvote) %>% summarise(mean_lr_replacement = mean(lr_selfplacement, na.rm = TRUE))
+mean
+med = dat_vaa %>%  group_by(partyvote) %>% summarise(median_lr_replacement = median(lr_selfplacement, na.rm = TRUE))
+med
+sd = dat_vaa %>%  group_by(partyvote) %>% summarise(sd_lr_replacement = sd(lr_selfplacement, na.rm = TRUE))
+sd
+
+new_object = data.frame(merge(merge(mean,med, by.x = "partyvote", by.y = "partyvote"), sd, by.x = "partyvote", by.y = "partyvote"))
+new_object
+
+```
+_I have explored the 3 results using Merge function using column 'partyvote' to ensure 1:1 mapping and then stored into object as a data frame_
+
+14. Interpret the output: voters from which party are - on average - the most "left", and voters from which party are - on average - most "right"? For which party do we observe the largest standard deviation, and what does a larger standard deviation imply regarding the distribution of left-right self-placements? [5 points]
+
+_Voters from Aontú are the most right with largest average 5.34 and voters from S-PBP are most left with smallest average 2.39_
+_Aontú has largest standard deviation 2.14_
+_Larger standard deviation imply data is largely spreadout and its distance from mean left-right self-placements is higher than the rest_
+
+
+15. Group the data frame by `immig` and get the average left-right position for the two groups. Which group has a higher average left-right value? [5 points]
+
+```{r}
+dat_vaa_filtered %>%  group_by(immig) %>% summarise(mean_lr_selfplacement = mean(lr_selfplacement, na.rm = TRUE))
+```
+_The group with immig = 1 (support more restrictive policies) has higher average left-right value_
+
+16. We now use a categorical variable `age`. Use `count()` to get the distribution of age groups (using absolute frequencies/counts). Which age category is the modal age category? [5 points]
+
+```{r}
+dat_vaa_filtered %>%  group_by(age) %>% summarise(cnt = n()) %>% 
+  mutate(freq = round(cnt / sum(cnt)*100, 3)) %>%  arrange(desc(freq))
+
+```
+_25-34 is the modal age category with highest count_
+
+17. Create a new binary variable that distinguishes between respondents who would vote for Sinn Féin and all other respondents. You can use `ifelse()` to recode a variable into two categories. You can name this variable `sinn_fein_binary`. [5 points] 
+
+```{r}
+head(dat_vaa_filtered,6)
+
+w <- function(x) return(ifelse(x == "Sinn Féin", 'yes' , 'no'))
+#head(w(dat_elections$party_name))
+
+#creating the binary variable sinn_fein_binary with values 'yes' or 'no'
+dat_sinn_fein_binary <- dat_vaa %>% mutate(sinn_fein_binary = w(partyvote))
+head(dat_sinn_fein_binary,20)
+
+#checking if we have rows with sinn_fein_binary == "yes" and "no"
+filter(dat_sinn_fein_binary, partyvote != "Sinn Féin")
+filter(dat_sinn_fein_binary, partyvote == "Sinn Féin")
+
+table(dat_sinn_fein_binary$sinn_fein_binary)
+```
+
+18. **BONUS POINTS**: Create a barplot (`geom_bar()`) and plot the distribution of age groups for both groups of voters. Use `facet_wrap()` to create a plot with two "small multiples". Are respondents who would vote for Sinn Féin younger than respondents who expressed a different vote choice? [5 points]
+
+```{r}
+
+dim(dat_sinn_fein_binary)
+#Bar graph
+ggplot(filter(dat_sinn_fein_binary,!is.na(age)&!is.na(sinn_fein_binary)), aes(x = age)) + geom_bar(width = 0.3,  fill = 'orange') +  geom_text(aes(label = ..count..), stat = "count", colour = "black", vjust = -0.2, size = 3) + labs(x = "Age", y = "count", title = "Distribution of Sinn Fein and Non Sinn Fein voters for all age groups")
+
+```
+
+```{r}
+#Graph with facet added
+ggplot(filter(dat_sinn_fein_binary,!is.na(age)&!is.na(sinn_fein_binary)), aes(x = age)) + geom_bar(width = 0.3,  fill = 'orange') +   geom_text(aes(label = ..count..), stat = "count", colour = "black", vjust = -0.2, size = 3) + facet_wrap(~sinn_fein_binary) + labs(x = "Age", y = "count", title = "Facet distribution of Sinn Fein and Non Sinn Fein voters for all age groups")  
+```
+
+
+
+_We cannot truly identify younger respondents as 18-24 or 25-34 or both of them combined_
+_If we are to assume younger respondents as 18-24, then we still do not know the individual ages of each respondents to come to a conclusion_
+_For example : 3392 can have 90% having age 24 and 10% between age 18-23. However, 9344 can have 5% with age 18-20 and 95% with age 21-24_
+_So there is no convincing answer to this question unless we know individual ages of all respondents_
