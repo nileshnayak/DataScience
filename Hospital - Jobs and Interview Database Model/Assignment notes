@@ -1,0 +1,305 @@
+CREATE SCHEMA `nayak21200475` ;
+
+CREATE TABLE `nayak21200475`.`hospital` (
+  `hospital_id` VARCHAR(45) NOT NULL,
+  `hospital_name` VARCHAR(45) NOT NULL,
+  `telephone` INT NOT NULL,
+  `address` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`hospital_id`));
+
+CREATE TABLE `nayak21200475`.`candidate` (
+  `candidate_id` VARCHAR(45) NOT NULL,
+  `firstname` VARCHAR(45) NOT NULL,
+  `surname` VARCHAR(45) NOT NULL,
+  `address` VARCHAR(45) NOT NULL,
+  `telephone` INT NOT NULL,
+  `skills` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`candidate_id`, `skills`, `telephone`));
+
+CREATE TABLE `nayak21200475`.`position` (
+  `position_id` VARCHAR(45) NOT NULL,
+  `position_type` VARCHAR(45) NOT NULL,
+  `hosp_id_advertising_position` VARCHAR(45) NOT NULL,
+  `skills_required` VARCHAR(45) NOT NULL,
+  `no_of_positions` INT NOT NULL,
+  PRIMARY KEY (`position_id`, `skills_required`, `position_type`, `hosp_id_advertising_position`));
+
+CREATE TABLE `nayak21200475`.`interview` (
+  `interview_id` VARCHAR(45) NOT NULL,
+  `interview_role` VARCHAR(45) NOT NULL,
+  `interview_date` DATE NOT NULL,
+  `interview_candidate_id` VARCHAR(45) NOT NULL,
+  `interview_hospital_id` VARCHAR(45) NOT NULL,
+  `offered` VARCHAR(45) NOT NULL,
+  PRIMARY KEY (`interview_id`));
+
+
+*****************************************************************************************************************************
+
+
+#constraints added
+
+ALTER TABLE `nayak21200475`.`position` 
+ADD INDEX `hosp_id_idx` (`hosp_id_advertising_position` ASC) VISIBLE;
+;
+ALTER TABLE `nayak21200475`.`position` 
+ADD CONSTRAINT `hosp_id`
+  FOREIGN KEY (`hosp_id_advertising_position`)
+  REFERENCES `nayak21200475`.`hospital` (`hospital_id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;
+
+ALTER TABLE `nayak21200475`.`interview` 
+ADD CONSTRAINT `interview_candidate`
+  FOREIGN KEY (`interview_candidate_id`)
+  REFERENCES `nayak21200475`.`candidate` (`candidate_id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;
+
+ALTER TABLE `nayak21200475`.`interview` 
+ADD CONSTRAINT `interview_hospital`
+  FOREIGN KEY (`interview_hospital_id`)
+  REFERENCES `nayak21200475`.`hospital` (`hospital_id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;
+
+ALTER TABLE `nayak21200475`.`position` 
+ADD INDEX `pos_role` (`position_type` ASC) VISIBLE;
+ALTER TABLE `nayak21200475`.`position` ALTER INDEX `hosp_id_idx` INVISIBLE;
+
+ALTER TABLE `nayak21200475`.`interview` 
+ADD CONSTRAINT `interview_position`
+  FOREIGN KEY (`interview_role`)
+  REFERENCES `nayak21200475`.`position` (`position_type`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;
+
+
+#adding cascades
+
+
+ALTER TABLE `nayak21200475`.`interview` 
+DROP FOREIGN KEY `interview_candidate`,
+DROP FOREIGN KEY `interview_hospital`,
+DROP FOREIGN KEY `interview_position`;
+ALTER TABLE `nayak21200475`.`interview` 
+ADD CONSTRAINT `interview_candidate`
+  FOREIGN KEY (`interview_candidate_id`)
+  REFERENCES `nayak21200475`.`candidate` (`candidate_id`)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE,
+ADD CONSTRAINT `interview_hospital`
+  FOREIGN KEY (`interview_hospital_id`)
+  REFERENCES `nayak21200475`.`hospital` (`hospital_id`)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE,
+ADD CONSTRAINT `interview_position`
+  FOREIGN KEY (`interview_role`)
+  REFERENCES `nayak21200475`.`position` (`position_type`)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE;
+
+
+ALTER TABLE `nayak21200475`.`position` 
+DROP FOREIGN KEY `hosp_id`;
+ALTER TABLE `nayak21200475`.`position` 
+ADD CONSTRAINT `hosp_id`
+  FOREIGN KEY (`hosp_id_advertising_position`)
+  REFERENCES `nayak21200475`.`hospital` (`hospital_id`)
+  ON DELETE CASCADE
+  ON UPDATE CASCADE;
+
+
+ALTER TABLE `nayak21200475`.`interview` 
+DROP FOREIGN KEY `interview_candidate`;
+ALTER TABLE `nayak21200475`.`interview` 
+ADD CONSTRAINT `interview_candidate`
+  FOREIGN KEY (`interview_candidate_id`)
+  REFERENCES `nayak21200475`.`candidate` (`candidate_id`)
+  ON DELETE CASCADE
+  ON UPDATE NO ACTION;
+
+
+DROP FOREIGN KEY `interview_candidate`;
+ALTER TABLE `nayak21200475`.`interview` 
+ADD CONSTRAINT `interview_candidate`
+  FOREIGN KEY (`interview_candidate_id`)
+  REFERENCES `nayak21200475`.`candidate` (`candidate_id`)
+  ON DELETE NO ACTION;
+
+
+ALTER TABLE `nayak21200475`.`interview` 
+DROP FOREIGN KEY `interview_candidate`,
+DROP FOREIGN KEY `interview_hospital`,
+DROP FOREIGN KEY `interview_position`;
+ALTER TABLE `nayak21200475`.`interview` 
+ADD CONSTRAINT `interview_candidate`
+  FOREIGN KEY (`interview_candidate_id`)
+  REFERENCES `nayak21200475`.`candidate` (`candidate_id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION,
+ADD CONSTRAINT `interview_hospital`
+  FOREIGN KEY (`interview_hospital_id`)
+  REFERENCES `nayak21200475`.`hospital` (`hospital_id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION,
+ADD CONSTRAINT `interview_position`
+  FOREIGN KEY (`interview_role`)
+  REFERENCES `nayak21200475`.`position` (`position_type`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;
+
+
+ALTER TABLE `nayak21200475`.`position` 
+DROP FOREIGN KEY `hosp_id`;
+ALTER TABLE `nayak21200475`.`position` 
+ADD CONSTRAINT `hosp_id`
+  FOREIGN KEY (`hosp_id_advertising_position`)
+  REFERENCES `nayak21200475`.`hospital` (`hospital_id`)
+  ON DELETE NO ACTION
+  ON UPDATE NO ACTION;
+
+
+
+
+********************************************************************************************************************
+
+
+• Hospital details: hospital identifier, hospital name, address, and telephone number.
+
+• Candidate details: candidate identifier, firstname, surname, address, telephone number, skills.
+
+• Position details: position identifier, type of position, hospital advertising the position, and skills required.
+
+• Interview details: You must decide what information should be used to best represent this concept based on the constraints and information provided below. 
+- One hospital can request many interviews for a position. 
+- One candidate can be invited to many interviews in relation to a position. 
+- One hospital can hire many candidates in relation to a position. 
+- Each candidate can have many skills. - done 
+- Each position can require many skills - done 
+
+Tricky - 
+Find the number of candidates that have been offered a position
+
+Questions: 
+1) Candidate table cannot have skill attribute - since primary key can only be Candidate identifier, we cannot add multiple skills which violate the rule constraints mentioned in the pdf
+2) what is position type ? is it role like Surgeon, Technician? or is it part time, full time, intern
+3) In the position table, same position role needs to have No of positions updated in all rows
+4) One hospital can request many interviews for a position - Can you explain this in brief?
+5) Query 7 - job type = nurse or nursing skills (critical thinking and investigation)?
+
+
+We cannot add hospital name in interview and position table since same Hospital name can be present for 2 different Hospital identifiers
+EX: 1001
+('50010','Rainbow', 'Galway', '888810'), 
+('50011','Indiana', 'Limmerick', '888811');
+
+
+
+############################ STORED PROCS to populate tables #########################################################################################################
+
+CREATE PROCEDURE `enter_position_table_details`(IN position_id VARCHAR(45), IN position_type VARCHAR(45), IN hosp_id_advertising_position VARCHAR(45), IN skills_required VARCHAR(45), IN no_of_positions INT)
+BEGIN
+INSERT INTO `nayak21200475`.`position` (`position_id`, `position_type`, `hosp_id_advertising_position`, `skills_required`, `no_of_positions`) 
+VALUES ( position_id, position_type, hosp_id_advertising_position, skills_required, no_of_positions);
+END
+
+CREATE PROCEDURE `enter_interview_table_details` (IN interview_id VARCHAR(45), IN interview_role VARCHAR(45), IN interview_date DATE, IN interview_candidate_id VARCHAR(45), 
+IN interview_hospital_id VARCHAR(45), IN offered VARCHAR(45))
+BEGIN
+INSERT INTO `nayak21200475`.`interview` (`interview_id`,`interview_role`,`interview_date`,`interview_candidate_id`,`interview_hospital_id`,`offered`) 
+VALUES (interview_id,interview_role,interview_date,interview_candidate_id,interview_hospital_id,offered); 
+END
+
+
+CREATE PROCEDURE `enter_candidate_table_details`(IN candidate_id VARCHAR(45), IN firstname VARCHAR(45), IN surname DATE, IN address VARCHAR(45), IN telephone INT, IN skills VARCHAR(45))
+BEGIN
+INSERT INTO `nayak21200475`.`candidate` (`candidate_id`,`firstname`,`surname`,`address`,`telephone`,`skills`) 
+VALUES (candidate_id , firstname , surname,  address, telephone, skills);
+END
+
+
+CREATE PROCEDURE `enter_hospital_table_details`(IN hospital_id VARCHAR(45), IN hospital_name VARCHAR(45), IN address VARCHAR(45), IN telephone INT)
+BEGIN
+INSERT INTO `nayak21200475`.`hospital` (`hospital_id`, `hospital_name`, `address`, `telephone`) 
+VALUES (hospital_id, hospital_name, address, telephone);
+END
+
+
+################## STORED PROCS to query from tables #########################################################################################################
+
+CREATE PROCEDURE `query1` (IN hosp_id varchar(45))
+BEGIN
+select hospital_name from `nayak21200475`.`hospital` where hospital_id = hosp_id;
+END
+
+CREATE PROCEDURE `query2` (IN hosp_name varchar(45))
+BEGIN
+select * from `nayak21200475`.`hospital` where hospital_name = hosp_name;
+END
+
+CREATE PROCEDURE `query3` (in sur_name varchar(45))
+BEGIN
+select * from `nayak21200475`.`candidate` where surname = sur_name;
+END
+
+CREATE PROCEDURE `query4`(in pos_id varchar(45))
+BEGIN
+select distinct candidate_id, firstname, surname from candidate where skills in (select skills_required from `nayak21200475`.`position` where position_id = pos_id);
+END
+
+CREATE PROCEDURE `query5`()
+BEGIN
+select count(distinct interview_candidate_id) from interview where offered = 'yes';
+END
+
+CREATE PROCEDURE `query6` (in skills_reqd varchar(45))
+BEGIN
+select position_type from position where skills_required = skills_reqd;
+END
+
+CREATE PROCEDURE `query7`()
+BEGIN
+select sum(b.no_of_positions) as no_of_positions from (select distinct position_id, no_of_positions from position where position_type = "nurse") b;
+END
+
+CREATE PROCEDURE `query8`()
+BEGIN
+select h.hospital_name, p.position_type from position p , hospital h where p.hosp_id_advertising_position = h.hospital_id group by 1 order by 1 asc, 2 asc;
+END
+
+CREATE PROCEDURE `query9` (in intview_dt date)
+BEGIN
+select * from interview where `nayak21200475`.interview_date = intview_dt;
+END
+
+CREATE PROCEDURE `query10` (in intview_dt date)
+BEGIN
+select distinct interview_candidate_id from interview where `nayak21200475`.interview_date = intview_dt;
+END
+
+CREATE PROCEDURE `query11` ()
+BEGIN
+select distinct b.interview_candidate_id , c.firstname, c.surname 
+from candidate c join 
+(select interview_candidate_id, count(*) from interview  
+group by interview_candidate_id 
+having count(*) >= 2) b
+on b.interview_candidate_id = c.candidate_id;
+END
+
+
+#Stored proc to test 11 queries
+call nayak21200475.query1('H001');
+call nayak21200475.query2('Apollo');
+call nayak21200475.query3('Nayak');
+call nayak21200475.query4('10004');
+call nayak21200475.query5();
+call nayak21200475.query6('communication');
+call nayak21200475.query7();
+call nayak21200475.query8();
+call nayak21200475.query9('2021-01-01');
+call nayak21200475.query10('2021-01-01');
+call nayak21200475.query11();
+
+************************************************************************************************************************
