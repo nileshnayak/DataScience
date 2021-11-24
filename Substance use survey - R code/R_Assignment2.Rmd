@@ -1,0 +1,170 @@
+---
+title: "R_Assignment2"
+author: "Nilesh Harekal Nayak 21200475"
+date: "14/11/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r Loading libraries}
+#install.packages("tidyverse")
+#install.packages("dplyr")
+#install.packages("ggplot2")
+options(warn=-1)
+library(tidyverse)
+options(warn=0)
+library(dplyr)
+library(ggplot2)
+
+```
+# Task 1
+
+#Question 1
+
+```{r Loading dataset}
+
+#loading 1995 survey
+data_survey_1995 <- read.table("C:/Users/dell/Desktop/Ireland Study/R Prog/week 8/Assignment 2/s50_1995.txt", sep=" ", header=TRUE)
+head(data_survey_1995)
+class(data_survey_1995)
+
+#converting each variable to factors
+data_survey_1995$alcohol = factor(data_survey_1995$alcohol, levels=c("1","2","3","4","5"), labels = c("not", "once or twice a year", "once a month", "once a week", "more than once a week"), ordered=TRUE)
+data_survey_1995$drugs = factor(x = data_survey_1995$drugs , levels=c("1","2","3","4"), labels = c("not","tried once", "occasional", "regular"), ordered=TRUE)
+data_survey_1995$smoke = factor(x = data_survey_1995$smoke , levels=c("1","2","3"), labels = c("not","ocassional", "regular") , ordered = TRUE)
+data_survey_1995$sport = factor(x = data_survey_1995$sport , levels=c("1","2"), labels = c("not regular","regular") , ordered = TRUE)
+
+head(data_survey_1995,3)
+str(data_survey_1995)
+```
+_The structure of the dataset is a data frame with 50 observations of 4 variables_
+
+
+#Question 2 
+```{r loading barplots}
+par(mfrow=c(1, 2), mar = c(2, 2, 2, 2))
+barplot(table(data_survey_1995$smoke), xlab = "smoke" , ylab = "count", main = "Distribution of smoke", col = "red", xlim = c(0, 3),ylim = c(0, 60))
+barplot(table(data_survey_1995$sport), xlab = "sport" , ylab = "count", main = "Distribution of sport", col = "lightgreen", xlim = c(0, 3),ylim = c(0, 60))
+```
+
+_In a cohort of 50 pupils aged 13 in 1995 in a school present in West of Scotland, more than 35 students do not smoke_
+
+_Also, more than 35 involve themselves in sport regularly_
+
+_However we cannot deduce from the above graph that the ones who do not smoke are the same ones who go for sports regularly. For this we need to see that each pupil level_
+
+
+#Question 3
+```{r proportions}
+#proportion of pupils who smoke at least occasionally?
+#this implies who smoke at least ocassionally + regular
+newdata_1 <- subset(data_survey_1995, data_survey_1995$smoke == 'ocassional' | data_survey_1995$smoke == 'regular')
+length(newdata_1$smoke) / length(data_survey_1995$smoke)
+```
+
+```{r}
+#proportion of pupils who regularly practiced sport and smoke at least occasionally
+#this implies who go for sport regularly and (smoke at least ocassionally + regular)
+newdata_2 <- subset(data_survey_1995, data_survey_1995$sport == 'regular' & (data_survey_1995$smoke == 'ocassional' | data_survey_1995$smoke == 'regular'))
+length(newdata_2$smoke) / length(data_survey_1995$smoke)
+```
+
+_24% of the pupils smoke at least occasionally_
+
+_18% pupils regularly practice sport and smoke at least occasionally_
+
+
+
+#Question 4
+```{r class}
+class(data_survey_1995) <- "s50survey"
+str(data_survey_1995)
+```
+
+```{r}
+summary.s50survey<-function(data)
+{
+cat ("The proportions for alcohol is : \n" )
+print (prop.table(table(data$alcohol)))
+cat ("\n" )
+cat ("The proportions for drugs is : \n" )
+print (prop.table(table(data$drugs)))
+cat ("\n" )
+cat ("The proportions for smoke is : \n" )
+print (prop.table(table(data$smoke)))
+cat ("\n" )
+cat ("The proportions for sport is : \n" )
+print (prop.table(table(data$sport)))
+cat ("\n" )
+}
+
+summary(data_survey_1995)
+
+```
+#Question 5
+
+```{r}
+prop.table(table(data_survey_1995$drugs))[1]
+```
+
+_Based on output of question #4 and #5, 72% of the pupils did not use cannabis_
+
+
+
+#Question 6
+
+```{r}
+#reading 1997 dataset + converting each variable to ordered factors
+data_survey_1997 <- read.table("C:/Users/dell/Desktop/Ireland Study/R Prog/week 8/Assignment 2/s50_1997.txt", sep=" ", header=TRUE)
+data_survey_1997$alcohol = factor(data_survey_1997$alcohol, levels=c("1","2","3","4","5"), labels = c("not", "once or twice a year", "once a month", "once a week", "more than once a week"), ordered=TRUE)
+data_survey_1997$drugs = factor(x = data_survey_1997$drugs , levels=c("1","2","3","4"), labels = c("not","tried once", "occasional", "regular"), ordered=TRUE)
+data_survey_1997$smoke = factor(x = data_survey_1997$smoke , levels=c("1","2","3"), labels = c("not","ocassional", "regular") , ordered = TRUE)
+data_survey_1997$sport = factor(x = data_survey_1997$sport , levels=c("1","2"), labels = c("not regular","regular") , ordered = TRUE)
+
+
+#displaying 1997 dataset after ordered factors applied to each variable.
+head(data_survey_1997,3)
+
+#assigning class to 1997 dataset
+class(data_survey_1997) <- "s50survey"
+str(data_survey_1997)
+
+#Test the summary S3 method on 1997 dataset
+summary(data_survey_1997)
+```
+
+
+#Question 7
+
+_Based on interpretation between Students practising sport regularly decreased from 74% in the year 1995 to 38% in the year 1997_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
